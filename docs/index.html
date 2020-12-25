@@ -50,44 +50,33 @@ nb_path: "index.ipynb"
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Fill me in please! Don't forget code examples:</p>
+<p>This module is a command line tool
+<code>nst</code></p>
+<p>Use <code>nst --help</code> for more details:</p>
+
+<pre><code>Usage: nst [OPTIONS]
+
+Options:
+  -c, --content TEXT      path to content image  [default:
+                          ./examples/content.jpg]
+
+  -s, --style TEXT        path to style image  [default: ./examples/style.jpg]
+  -o, --output TEXT       path to save generated image  [default:
+                          ./output/generated-1608872128.jpg]
+
+  --style_weight INTEGER  [default: 1000000]
+  --style_layers TEXT     Conv Layers to use for style loss  [default:
+                          1,2,3,4,5]
+
+  --steps INTEGER         [default: 300]
+  --random_input          Will start with random noise if set, otherwise
+                          content image
+
+  --help                  Show this message and exit.</code></pre>
 
 </div>
 </div>
 </div>
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="mi">1</span><span class="o">+</span><span class="mi">1</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>2</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
 </div>
  
 
