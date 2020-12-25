@@ -13,7 +13,13 @@ entries:
       title: Main
       url: main.html
     - output: web,pdf
+      title: Config
+      url: config.html
+    - output: web,pdf
       title: Title
+      url: nst.html
+    - output: web,pdf
+      title: Utility
       url: util.html
     output: web
     title: pytorch_nst
