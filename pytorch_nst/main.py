@@ -14,6 +14,7 @@ from .nst import run_style_transfer
 
 # Cell
 def validate_layers(ctx, param, value):
+    """Validates that the input layers passed into CLI are correctly formatted."""
     try:
         layers = [l for l in value.split(',')]
         convs = [(int(p),int(l)) for p,l in [layer.split("_") for layer in layers]]

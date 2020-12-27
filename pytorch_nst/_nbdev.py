@@ -31,7 +31,7 @@ modules = ["main.py",
            "nst.py",
            "util.py"]
 
-doc_url = "https://tomsitter.github.io/pytorch_nst/"
+doc_url = "https://tomsitter.github.io/pytorch-style-transfer-nbdev/"
 
 git_url = "https://github.com/tomsitter/pytorch_nst/tree/master/"
 
