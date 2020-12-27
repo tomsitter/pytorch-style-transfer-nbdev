@@ -8,16 +8,17 @@ from time import time
 import click
 import torchvision.models as models
 
-from .config import device, cnn_normalization_mean, cnn_normalization_std
+from .config import device
 from .util import image_loader, imshow, random_img, save_image, show_all_images
 from .nst import run_style_transfer
 
 # Cell
 def validate_layers(ctx, param, value):
     try:
-        layers = [int(l) for l in value.split(',')]
-        assert all(isinstance(l, int) for l in layers)
-        return [f'conv_{l}' for l in layers]
+        layers = [l for l in value.split(',')]
+        convs = [(int(p),int(l)) for p,l in [layer.split("_") for layer in layers]]
+        assert all(isinstance(l, int) and isinstance(p, int) for p,l in convs)
+        return [f'conv{l}' for l in layers]
     except ValueError:
         raise click.BadParameter('Layers need to be ints seperated by commas')
 
@@ -40,12 +41,13 @@ def validate_layers(ctx, param, value):
                 show_default=True)
 @click.option('--style_weight', default=1000000, prompt=False, show_default=True)
 @click.option('--style_layers', callback=validate_layers,
-                default='1,2,3,4,5', show_default=True,
+                default='1_1,2_1,3_1,4_1,5_1', show_default=True,
                 help='Conv Layers to use for style loss')
 @click.option('--steps', default=300, prompt=False, show_default=True)
 @click.option('--random_input', is_flag=True,
                 help='Will start with random noise if set, otherwise content image')
 def cli(content, style, output, style_weight, style_layers, steps, random_input):
+    """Command Line interface for running neural style transfer with PyTorch"""
     style_img = image_loader(style)
     content_img = image_loader(content)
     assert style_img.size() == content_img.size(), \
@@ -59,14 +61,21 @@ def cli(content, style, output, style_weight, style_layers, steps, random_input)
     # Load a pre-trained VGG network
     print("Loading pre-trained VGG19. This may take a while the first run...")
 
-    cnn = models.vgg19(pretrained=True).features.to(device).eval()
+    vgg = models.vgg19(pretrained=True).features #Conv2D and pooling layers
+
+    #for param in vgg.parameters():
+    #    param.requires_grad_(False)
+
+    vgg.to(device).eval()
     #cnn = models.resnet50(pretrained=True).to(device).eval()
 
-    gen_img = run_style_transfer(cnn,
-                    cnn_normalization_mean, cnn_normalization_mean,
-                    content_img, style_img, input_img,
-                    style_layers=style_layers, style_weight=style_weight,
-                    num_steps=steps)
+    gen_img = run_style_transfer(vgg,
+                                 content_img,
+                                 style_img,
+                                 input_img,
+                                 style_layers=style_layers,
+                                 style_weight=style_weight,
+                                 num_steps=steps)
 
     show_all_images(content_img, style_img, gen_img, title="Generated Image")
 

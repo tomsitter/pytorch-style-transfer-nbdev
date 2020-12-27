@@ -10,8 +10,9 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import copy
+import pdb
 
-from .config import device, content_layers_default, style_layers_default
+from .config import device, content_layers_default, style_layers_default, normalization_mean, normalization_std
 
 class ContentLoss(nn.Module):
     ''' Calculate mse loss between two feature maps from the same layer'''
@@ -64,10 +65,10 @@ class Normalization(nn.Module):
         return (img - self.mean) / self.std
 
 def get_style_model_and_losses(cnn,
-                           normalization_mean, normalization_std,
-                           style_img, content_img,
-                           content_layers=content_layers_default,
-                           style_layers=style_layers_default):
+                               style_img,
+                               content_img,
+                               content_layers=content_layers_default,
+                               style_layers=style_layers_default):
     '''
     We're going to build a model where we insert our content/style layers into the pre-trained cnn
     These layers are "transparent", as they pass along the input unaltered, but have their own custom
@@ -83,33 +84,38 @@ def get_style_model_and_losses(cnn,
 
     model = nn.Sequential(normalization)
 
-    i = 0
+    pool, conv, bn = 1, 1, 1
     for layer in cnn.children():
         if isinstance(layer, nn.Conv2d):
-            i+=1
-            name = f'conv_{i}'
+            name = f'conv{pool}_{conv}'
+            conv+=1
         elif isinstance(layer, nn.ReLU):
-            name = f'relu_{i}'
+            name = f'relu{pool}_{conv}'
             layer = nn.ReLU(inplace=False)
         elif isinstance(layer, nn.MaxPool2d):
-            name = f'pool_{i}'
+            name = f'pool{pool}'
+            conv = 1
+            pool += 1
         elif isinstance(layer, nn.BatchNorm2d):
-            name = f'bn_{i}'
+            name = f'bn{bn}'
+            bn += 1
         else:
             raise RuntimeError(f'Unrecognized layer: {layer.__class__.__name__}')
 
         model.add_module(name, layer)
+        #print(name)
 
+        #pdb.set_trace()
         if name in content_layers:
             target = model(content_img).detach()
             content_loss = ContentLoss(target)
-            model.add_module(f'content_loss_{i}', content_loss)
+            model.add_module(f'content_loss_{pool}_{conv}', content_loss)
             content_losses.append(content_loss)
 
         if name in style_layers:
             target_feature = model(style_img).detach()
             style_loss = StyleLoss(target_feature)
-            model.add_module(f'style_loss_{i}', style_loss)
+            model.add_module(f'style_loss_{pool}_{conv}', style_loss)
             style_losses.append(style_loss)
 
     # trim layers after the last content/style loss layer, since we don't need them
@@ -126,8 +132,9 @@ def get_input_optimizer(input_img):
     return optimizer
 
 def run_style_transfer(cnn,
-                       normalization_mean, normalization_std,
-                       content_img, style_img, input_img,
+                       content_img,
+                       style_img,
+                       input_img,
                        num_steps=300,
                        style_layers=None, style_weight=1000000, content_weight=1):
 
@@ -136,9 +143,10 @@ def run_style_transfer(cnn,
 
     print("Building the style transfer model..")
     model, style_losses, content_losses = get_style_model_and_losses(cnn,
-                normalization_mean, normalization_std,
-                style_img, content_img,
-                style_layers=style_layers)
+                                                                     style_img,
+                                                                     content_img,
+                                                                     style_layers=style_layers)
+
     optimizer = get_input_optimizer(input_img)
 
     print("Optimizing...")
@@ -152,8 +160,8 @@ def run_style_transfer(cnn,
             # Run a step forward, calculate loss of our content/style layers
             optimizer.zero_grad()
             model(input_img)
-            style_score=0
-            content_score=0
+            style_score=0.
+            content_score=0.
 
             for s1 in style_losses:
                 style_score += s1.loss
@@ -169,9 +177,12 @@ def run_style_transfer(cnn,
             run[0] += 1
             if run[0] % 50 == 0:
                 print(f'run {run}')
-                print(f'Style Loss: {round(style_score.item(), 2)}  '
-                      f'Content Loss: {round(content_score.item(), 2)}')
+                # print(f'Style Loss: {round(style_score.item(), 2)}  '
+                #      f'Content Loss: {round(content_score.item(), 2)}')
+                print(f'Style Loss: {style_score}  '
+                      f'Content Loss: {content_score}')
                 print()
+
 
             return style_score + content_score
 

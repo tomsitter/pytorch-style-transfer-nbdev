@@ -71,10 +71,10 @@ def show_all_images(content, style, generated, title=None):
         plt.title(title)
 
 def save_image(tensor, filepath):
-    Path(filepath).mkdir(parents=True, exist_ok=True)
-    image = tensor_to_image(tensor)
+    fp = Path(filepath)
+    fp.parents[0].mkdir(parents=True, exist_ok=True)
+    image = image_unloader(tensor)
     image.save(filepath)
-    print(f'Saved image to {filepath}')
 
 def random_img():
     return torch.rand(1, 3, imsize, imsize).to(device, torch.float)
